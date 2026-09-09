@@ -98,13 +98,53 @@ struct SwitcherGridLayout {
 
     init(count: Int, screen: CGSize, permissionFooter: Bool) {
         let available = max(200, min(1480, screen.width - 64))
-        let capacity = max(1, Int((available - 88 + 12) / 236))
-        columns = min(max(1, count), capacity)
-        width = min(available, CGFloat(columns) * 236 + 76)
-        cardWidth = min(208, max(60, (width - 88 - CGFloat(columns - 1) * 12) / CGFloat(columns) - 16))
-        rows = max(1, (count + columns - 1) / columns)
-        rowHeight = cardWidth * 0.82 + 126
-        let naturalHeight = CGFloat(rows) * rowHeight + CGFloat(rows - 1) * 16 + 84 + (permissionFooter ? 28 : 0)
-        height = min(naturalHeight, max(180, screen.height - 64))
+        let availableHeight = max(180, screen.height - 64)
+        let itemCount = max(1, count)
+        let footer = permissionFooter ? 28 : 0
+        let minimumCardWidth: CGFloat = 72
+        let maximumColumns = max(1, min(itemCount, Int((available - 76) / (minimumCardWidth + 28))))
+
+        var best: (columns: Int, rows: Int, cardWidth: CGFloat, rowHeight: CGFloat, width: CGFloat, height: CGFloat)?
+        for candidateColumns in 1...maximumColumns {
+            let candidateRows = max(1, (itemCount + candidateColumns - 1) / candidateColumns)
+            let widthLimited = (available - 88 - CGFloat(candidateColumns - 1) * 12) / CGFloat(candidateColumns) - 16
+            let rowBudget = (availableHeight - 84 - CGFloat(footer) - CGFloat(candidateRows - 1) * 16) / CGFloat(candidateRows)
+            let heightLimited = (rowBudget - 112) / 0.82
+            let candidateCardWidth = min(208, widthLimited, heightLimited)
+            guard candidateCardWidth >= minimumCardWidth else { continue }
+
+            let candidateRowHeight = candidateCardWidth * 0.82 + 112
+            let candidateWidth = min(available, CGFloat(candidateColumns) * (candidateCardWidth + 16) + CGFloat(candidateColumns - 1) * 12 + 88)
+            let candidateHeight = CGFloat(candidateRows) * candidateRowHeight + CGFloat(candidateRows - 1) * 16 + 84 + CGFloat(footer)
+            let candidate: (columns: Int, rows: Int, cardWidth: CGFloat, rowHeight: CGFloat, width: CGFloat, height: CGFloat) =
+                (candidateColumns, candidateRows, candidateCardWidth, candidateRowHeight, candidateWidth, candidateHeight)
+            guard let current = best else {
+                best = candidate
+                continue
+            }
+            if candidate.cardWidth > current.cardWidth + 0.5 ||
+                (abs(candidate.cardWidth - current.cardWidth) <= 0.5 && candidate.rows < current.rows) ||
+                (abs(candidate.cardWidth - current.cardWidth) <= 0.5 && candidate.rows == current.rows && candidate.columns < current.columns) {
+                best = candidate
+            }
+        }
+
+        if let best {
+            columns = best.columns
+            rows = best.rows
+            cardWidth = best.cardWidth
+            rowHeight = best.rowHeight
+            width = best.width
+            height = min(best.height, availableHeight)
+        } else {
+            // Extremely crowded or very short screens keep the old scrollable fallback.
+            columns = maximumColumns
+            rows = max(1, (itemCount + columns - 1) / columns)
+            cardWidth = min(208, max(60, (available - 88 - CGFloat(columns - 1) * 12) / CGFloat(columns) - 16))
+            rowHeight = cardWidth * 0.82 + 112
+            width = min(available, CGFloat(columns) * (cardWidth + 16) + CGFloat(columns - 1) * 12 + 88)
+            let naturalHeight = CGFloat(rows) * rowHeight + CGFloat(rows - 1) * 16 + 84 + CGFloat(footer)
+            height = min(naturalHeight, availableHeight)
+        }
     }
 }

@@ -41,6 +41,9 @@ import Foundation
                 if count == 18 { precondition(layout.rows > 1, "Many windows wrap into rows") }
             }
         }
+        let crowded = SwitcherGridLayout(count: 18, screen: CGSize(width: 1440, height: 900), permissionFooter: false)
+        precondition(crowded.rows <= 3, "Crowded layouts fit three rows on a standard display")
+        precondition(crowded.height <= 836, "Crowded layout stays within the visible screen")
         precondition(WindowMatching.isAuxiliaryWindow(bundleID: "com.apple.mail", title: "iCloud Mail Temizleme"))
         precondition(!WindowMatching.isAuxiliaryWindow(bundleID: "com.apple.mail", title: "Gelen Kutusu"))
         precondition(!WindowMatching.isAuxiliaryWindow(bundleID: "com.apple.mail", title: "Taslak: iCloud Mail Temizleme"))
