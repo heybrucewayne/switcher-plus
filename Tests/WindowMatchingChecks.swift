@@ -19,6 +19,11 @@ import Foundation
         precondition(WindowMatching.isDocument(role: "AXWindow",subrole: "AXDialog"))
         precondition(!WindowMatching.isDocument(role: "AXWindow",subrole: "AXFloatingWindow"))
         precondition(!WindowMatching.isDocument(role: "AXWindow",subrole: "AXUnknown"))
-        print("11 window matching/filter checks passed")
+        precondition(WindowMatching.listingID(number: nil, matchedID: nil, usedIDs: [], fallbackID: 999) == 999, "Other-Space document without a capture surface stays in the list")
+        precondition(WindowMatching.listingID(number: nil, matchedID: 1, usedIDs: [1], fallbackID: 999) == 999, "Equal geometry across Spaces cannot collapse distinct AX windows")
+        precondition(WindowMatching.listingID(number: 2, matchedID: 1, usedIDs: [1], fallbackID: 999) == 2, "Native identity wins over a geometry match from another Space")
+        precondition(WindowMatching.listingID(number: 1, matchedID: nil, usedIDs: [1], fallbackID: 999) == nil, "Repeated native identity is still deduplicated")
+        precondition(WindowMatching.listingID(number: nil, matchedID: 3, usedIDs: [1], fallbackID: 999) == 3, "Available unclaimed capture identity is preserved")
+        print("16 window matching/filter checks passed")
     }
 }

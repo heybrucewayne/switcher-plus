@@ -43,20 +43,24 @@ final class WindowManager {
                 let bounds = CGRect(origin: position, size: size)
                 let number = (attribute(element, "AXWindowNumber") as? NSNumber)?.uint32Value
                 let match = WindowMatching.match(id: number, pid: app.processIdentifier, title: title, bounds: bounds, candidates: candidates)
-                // AX can retain invisible helper/stale windows. A normal visible
-                // document must have a Window Server surface. Minimized windows
-                // may have no surface and are still useful switch targets.
-                guard match != nil || minimized || app.isHidden else { continue }
-                if let match, elements[match.id] != nil { continue }
-                let id = match?.id ?? fallbackID
-                if match == nil { fallbackID -= 1 }
+                // AX is the source of truth for listing across Spaces. A window
+                // does not need a currently available capture surface to appear.
+                // Only a native number is authoritative for deduplication: two
+                // different Spaces can contain windows with identical geometry.
+                guard let id = WindowMatching.listingID(number: number, matchedID: match?.id,
+                                                        usedIDs: Set(elements.keys), fallbackID: fallbackID) else { continue }
+                if id == fallbackID { fallbackID -= 1 }
                 elements[id] = element
                 result.append(WindowInfo(id: id, ownerPID: app.processIdentifier, ownerName: app.localizedName ?? "Application", title: title, bounds: bounds, layer: 0, isMinimized: minimized, bundleIdentifier: app.bundleIdentifier))
             }
         }
         let order = raw.compactMap { ($0[kCGWindowNumber as String] as? NSNumber)?.uint32Value }
         let ranks = Dictionary(order.enumerated().map { ($0.element, $0.offset) }, uniquingKeysWith: min)
-        return result.sorted { (ranks[$0.id] ?? Int.max) < (ranks[$1.id] ?? Int.max) }
+        return result.enumerated().sorted {
+            let left = ranks[$0.element.id] ?? Int.max
+            let right = ranks[$1.element.id] ?? Int.max
+            return left == right ? $0.offset < $1.offset : left < right
+        }.map(\.element)
     }
 
     private func attribute(_ element: AXUIElement, _ name: String) -> CFTypeRef? {

@@ -48,6 +48,14 @@ enum WindowMatching {
         return best.0
     }
 
+    static func listingID(number: CGWindowID?, matchedID: CGWindowID?, usedIDs: Set<CGWindowID>, fallbackID: CGWindowID) -> CGWindowID? {
+        if let number {
+            return usedIDs.contains(number) ? nil : number
+        }
+        if let matchedID, !usedIDs.contains(matchedID) { return matchedID }
+        return fallbackID
+    }
+
     static func isDocument(role: String?, subrole: String?) -> Bool {
         role == "AXWindow" && (subrole == "AXStandardWindow" || subrole == "AXDialog")
     }
