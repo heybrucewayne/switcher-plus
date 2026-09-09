@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import OSLog
 
 @MainActor
 final class SwitcherCoordinator: ObservableObject {
@@ -13,14 +14,38 @@ final class SwitcherCoordinator: ObservableObject {
     private let thumbnails = WindowThumbnailService()
     private var panel: SwitcherNSPanel?
     private var permissionPanel: NSPanel?
+    private let logger = Logger(subsystem: "com.switchr.app", category: "Coordinator")
+    private var permissionTask: Task<Void, Never>?
+    private var previewTask: Task<Void, Never>?
 
     func start() {
         hotKey.onAction = { [weak self] action in self?.handle(action) }
         hotKey.start()
+        logger.notice("Startup accessibility=\(PermissionManager.accessibilityGranted) listener=\(self.hotKey.isRunning)")
+        permissionTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, !Task.isCancelled else { return }
+                if PermissionManager.accessibilityGranted, self.hotKey.isRunning {
+                    self.permissionPanel?.orderOut(nil)
+                    self.permissionPanel = nil
+                }
+            }
+        }
+        previewTask = Task { [thumbnails] in
+            while !Task.isCancelled {
+                await thumbnails.refreshVisibleWindows()
+                try? await Task.sleep(for: .seconds(8))
+            }
+        }
     }
 
     func stop() {
+        permissionTask?.cancel()
+        permissionTask = nil
         hotKey.stop()
+        previewTask?.cancel()
+        previewTask = nil
         dismiss(cancelled: true)
     }
 
@@ -36,15 +61,20 @@ final class SwitcherCoordinator: ObservableObject {
     }
 
     func dismiss(cancelled: Bool) {
+        hotKey.resetSession()
+        logger.notice("Switcher dismissed cancelled=\(cancelled)")
         panel?.orderOut(nil)
         panel = nil
         let selected = windows.indices.contains(selection) ? windows[selection] : nil
         windows = []; selection = 0
-        Task { await thumbnails.clear() }
-        if !cancelled, let selected { focusService.focus(selected) }
+
+        if !cancelled, let selected { focusService.focus(selected, element: windowManager.elements[selected.id]) }
     }
 
-    func requestScreenRecording() { PermissionManager.requestScreenRecording() }
+    func requestScreenRecording() {
+        dismiss(cancelled: true)
+        PermissionManager.requestScreenRecording()
+    }
     func openAccessibilitySettings() { PermissionManager.promptForAccessibility() }
 
     func presentPermissionIfNeeded() {
@@ -55,10 +85,12 @@ final class SwitcherCoordinator: ObservableObject {
     private func handle(_ action: HotKeyManager.Action) {
         switch action {
         case .begin:
-            guard PermissionManager.accessibilityGranted else { showPermissionPanel(); return }
+            guard PermissionManager.accessibilityGranted else { hotKey.resetSession(); showPermissionPanel(); return }
             present()
         case .next: moveSelection(by: 1)
-        case .previous: moveSelection(by: -1)
+        case .previous:
+            if panel == nil { present(); selection = max(0, windows.count - 1) }
+            else { moveSelection(by: -1) }
         case .commit: dismiss(cancelled: false)
         case .cancel: dismiss(cancelled: true)
         }
@@ -66,19 +98,31 @@ final class SwitcherCoordinator: ObservableObject {
 
     private func present() {
         windows = windowManager.windows()
-        guard !windows.isEmpty else { return }
+        logger.notice("Switcher opened with \(self.windows.count) windows")
+        guard !windows.isEmpty else { hotKey.resetSession(); return }
         selection = windows.count > 1 ? 1 : 0 // first Tab advances from the most recently listed window.
         let root = SwitcherPanel(coordinator: self, thumbnailService: thumbnails)
         let panel = SwitcherNSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-        panel.contentView = NSHostingView(rootView: root)
-        panel.setContentSize(NSSize(width: panelWidth, height: 290))
+        panel.contentView = ClickThroughHostingView(rootView: root)
+        panel.setContentSize(NSSize(width: panelWidth, height: cardWidth * 0.82 + 182 + (PermissionManager.screenRecordingGranted ? 0 : 28)))
         panel.centerOnActiveScreen()
-        panel.orderFrontRegardless()
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.level = .popUpMenu
+        panel.hasShadow = false
+        panel.hidesOnDeactivate = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.makeKeyAndOrderFront(nil)
         self.panel = panel
     }
 
     private var panelWidth: CGFloat {
-        min(max(CGFloat(windows.count) * 184 + 44, 430), 1_180)
+        let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main
+        return min(max(CGFloat(windows.count) * 236 + 76, 350), min(1480, (screen?.visibleFrame.width ?? 1280) - 80))
+    }
+
+    var cardWidth: CGFloat {
+        return min(208, max(100, panelWidth - 104))
     }
 
     private func showPermissionPanel() {
@@ -105,4 +149,8 @@ private final class SwitcherNSPanel: NSPanel {
         guard let screen else { return }
         setFrameOrigin(NSPoint(x: screen.visibleFrame.midX - frame.width / 2, y: screen.visibleFrame.midY - frame.height / 2))
     }
+}
+
+private final class ClickThroughHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }

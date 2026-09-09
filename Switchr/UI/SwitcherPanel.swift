@@ -3,25 +3,74 @@ import SwiftUI
 struct SwitcherPanel: View {
     @ObservedObject var coordinator: SwitcherCoordinator
     let thumbnailService: WindowThumbnailService
+    @State private var hasScreenPermission = PermissionManager.screenRecordingGranted
 
     var body: some View {
-        HStack(spacing: 12) {
-            ForEach(Array(coordinator.windows.enumerated()), id: \.element.id) { index, window in
-                WindowCard(window: window, isSelected: index == coordinator.selection, thumbnailService: thumbnailService)
-                    .onTapGesture { coordinator.selectAndFocus(window) }
+        VStack(spacing: 4) {
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(Array(coordinator.windows.enumerated()), id: \.element.id) { index, window in
+                            Button { coordinator.selectAndFocus(window) } label: {
+                                WindowCard(window: window, isSelected: index == coordinator.selection, thumbnailService: thumbnailService, cardWidth: coordinator.cardWidth)
+                            }
+                            .buttonStyle(.plain)
+                            .focusEffectDisabled()
+                            .id(window.id)
+                            .accessibilityLabel("\(window.ownerName), \(window.displayTitle)\(window.isMinimized ? ", minimized" : "")")
+                        }
+                    }.padding(.horizontal, 20).padding(.vertical, 18)
+                }
+                .scrollIndicators(.hidden)
+                .onAppear {
+                    if coordinator.windows.indices.contains(coordinator.selection) {
+                        proxy.scrollTo(coordinator.windows[coordinator.selection].id, anchor: .center)
+                    }
+                }
+                .onChange(of: coordinator.selection) { _, selection in
+                    guard coordinator.windows.indices.contains(selection) else { return }
+                    proxy.scrollTo(coordinator.windows[selection].id, anchor: .center)
+                }
+            }
+            if !hasScreenPermission {
+                Button("Enable window previews — Screen Recording permission") {
+                    coordinator.requestScreenRecording()
+                    hasScreenPermission = PermissionManager.screenRecordingGranted
+                }
+                .buttonStyle(.link)
+                .font(.system(size: 11))
+                .padding(.bottom, 12)
             }
         }
-        .padding(18)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.28), lineWidth: 0.8) }
-        .shadow(color: .black.opacity(0.20), radius: 28, y: 14)
-        .onKeyPress(.tab) {
-            coordinator.moveSelection(by: 1)
-            return .handled
-        }
+        .modifier(LiquidGlassPanel())
+        .padding(24)
         .onKeyPress(.leftArrow) { coordinator.moveSelection(by: -1); return .handled }
         .onKeyPress(.rightArrow) { coordinator.moveSelection(by: 1); return .handled }
         .onKeyPress(.escape) { coordinator.dismiss(cancelled: true); return .handled }
+    }
+}
+
+private struct LiquidGlassPanel: ViewModifier {
+    private let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content
+                .clipShape(shape)
+                .background {
+                    Color.clear.glassEffect(.regular, in: shape)
+                }
+                .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
+        } else {
+            content
+                .clipShape(shape)
+                .background(.ultraThinMaterial, in: shape)
+                .overlay {
+                    shape.strokeBorder(.white.opacity(0.30), lineWidth: 0.7)
+                }
+                .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
+        }
     }
 }
