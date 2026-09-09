@@ -15,21 +15,12 @@ final class SwitcherCoordinator: ObservableObject {
     private var panel: SwitcherNSPanel?
     private var permissionPanel: NSPanel?
     private let logger = Logger(subsystem: "com.switchr.app", category: "Coordinator")
-    private var permissionTask: Task<Void, Never>?
     private var previewTask: Task<Void, Never>?
 
     func start() {
         hotKey.onAction = { [weak self] action in self?.handle(action) }
         hotKey.start()
         logger.notice("Startup accessibility=\(PermissionManager.accessibilityGranted) listener=\(self.hotKey.isRunning)")
-        permissionTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
-                guard let self, !Task.isCancelled else { return }
-                // PermissionView polls both settings and shows the ready state;
-                // keep it open until the user dismisses the confirmation.
-            }
-        }
         previewTask = Task { [thumbnails] in
             while !Task.isCancelled {
                 await thumbnails.refreshVisibleWindows()
@@ -39,8 +30,6 @@ final class SwitcherCoordinator: ObservableObject {
     }
 
     func stop() {
-        permissionTask?.cancel()
-        permissionTask = nil
         hotKey.stop()
         previewTask?.cancel()
         previewTask = nil
