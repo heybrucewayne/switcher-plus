@@ -1,0 +1,82 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A001 /* SwitchrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B001 /* SwitchrApp.swift */; };
+		A002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B002 /* AppDelegate.swift */; };
+		A003 /* SwitcherCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B003 /* SwitcherCoordinator.swift */; };
+		A004 /* WindowInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B004 /* WindowInfo.swift */; };
+		A005 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B005 /* PermissionManager.swift */; };
+		A006 /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B006 /* WindowManager.swift */; };
+		A007 /* WindowFocusService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B007 /* WindowFocusService.swift */; };
+		A008 /* WindowThumbnailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B008 /* WindowThumbnailService.swift */; };
+		A009 /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B009 /* HotKeyManager.swift */; };
+		A010 /* SwitcherPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B010 /* SwitcherPanel.swift */; };
+		A011 /* WindowCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B011 /* WindowCard.swift */; };
+		A012 /* PermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B012 /* PermissionView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchrApp.swift; sourceTree = "<group>"; };
+		B002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitcherCoordinator.swift; sourceTree = "<group>"; };
+		B004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowInfo.swift; sourceTree = "<group>"; };
+		B005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
+		B006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		B007 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFocusService.swift; sourceTree = "<group>"; };
+		B008 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowThumbnailService.swift; sourceTree = "<group>"; };
+		B009 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
+		B010 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitcherPanel.swift; sourceTree = "<group>"; };
+		B011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCard.swift; sourceTree = "<group>"; };
+		B012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionView.swift; sourceTree = "<group>"; };
+		B013 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B014 = {isa = PBXFileReference; explicitFileType = wrapper.application; path = Switchr.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		C001 = {isa = PBXGroup; children = (C002, B014); sourceTree = "<group>"; };
+		C002 = {isa = PBXGroup; path = Switchr; sourceTree = "<group>"; children = (C003, C004, C005, C006, B013); };
+		C003 = {isa = PBXGroup; path = App; sourceTree = "<group>"; children = (B001, B002, B003); };
+		C004 = {isa = PBXGroup; path = Models; sourceTree = "<group>"; children = (B004); };
+		C005 = {isa = PBXGroup; path = Services; sourceTree = "<group>"; children = (B005, B006, B007, B008, B009); };
+		C006 = {isa = PBXGroup; path = UI; sourceTree = "<group>"; children = (B010, B011, B012); };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D001 = {isa = PBXNativeTarget; buildConfigurationList = E003; buildPhases = (D002, D003, D004); buildRules = (); dependencies = (); name = Switchr; productName = Switchr; productReference = B014; productType = "com.apple.product-type.application"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D000 = {isa = PBXProject; attributes = { LastSwiftUpdateCheck = 2600; LastUpgradeCheck = 2600; TargetAttributes = { D001 = { CreatedOnToolsVersion = 26.6; }; }; }; buildConfigurationList = E001; compatibilityVersion = "Xcode 16.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = C001; productRefGroup = C001; projectDirPath = ""; projectRoot = ""; targets = (D001); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D004 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A002, A003, A004, A005, A006, A007, A008, A009, A010, A011, A012); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D002 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F001 = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_VERSION = 6.0; }; name = Debug; };
+		F002 = {isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_VERSION = 6.0; }; name = Release; };
+		F003 = {isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = ""; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Switchr/Info.plist; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.mustafakavalci.switchr; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_STRICT_CONCURRENCY = minimal; }; name = Debug; };
+		F004 = {isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = ""; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Switchr/Info.plist; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.mustafakavalci.switchr; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_STRICT_CONCURRENCY = minimal; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E001 = {isa = XCConfigurationList; buildConfigurations = (F001, F002); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		E003 = {isa = XCConfigurationList; buildConfigurations = (F003, F004); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = D000;
+}
