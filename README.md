@@ -1,4 +1,4 @@
-# Switchr
+# Switcher +
 
 Native macOS window switcher. It runs as an accessory utility, accepts Option–Tab through an Accessibility-authorized event tap, lists real app windows, and focuses the selected window when Option is released.
 

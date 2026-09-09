@@ -47,6 +47,11 @@ final class SwitcherCoordinator: ObservableObject {
     func requestScreenRecording() { PermissionManager.requestScreenRecording() }
     func openAccessibilitySettings() { PermissionManager.promptForAccessibility() }
 
+    func presentPermissionIfNeeded() {
+        guard !PermissionManager.accessibilityGranted else { return }
+        showPermissionPanel()
+    }
+
     private func handle(_ action: HotKeyManager.Action) {
         switch action {
         case .begin:
