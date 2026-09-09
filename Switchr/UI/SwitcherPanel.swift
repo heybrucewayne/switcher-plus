@@ -60,16 +60,20 @@ private struct LiquidGlassPanel: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            content
+            ZStack {
+                shape
+                    .fill(Color.clear)
+                    .glassEffect(.regular, in: shape)
+                content
+            }
                 .clipShape(shape)
-                .background {
-                    Color.clear.glassEffect(.regular, in: shape)
-                }
                 .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
         } else {
-            content
+            ZStack {
+                shape.fill(.ultraThinMaterial)
+                content
+            }
                 .clipShape(shape)
-                .background(.ultraThinMaterial, in: shape)
                 .overlay {
                     shape.strokeBorder(.white.opacity(0.30), lineWidth: 0.7)
                 }
