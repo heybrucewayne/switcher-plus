@@ -57,27 +57,15 @@ struct SwitcherPanel: View {
 private struct LiquidGlassPanel: ViewModifier {
     private let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
 
-    @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            ZStack {
-                shape
-                    .fill(Color.clear)
-                    .glassEffect(.regular, in: shape)
-                content
+        content
+            // Keep the material behind the cards. Applying glassEffect to the
+            // panel hierarchy can blur the SwiftUI content on macOS 26.
+            .background(.regularMaterial, in: shape)
+            .overlay {
+                shape.strokeBorder(.white.opacity(0.24), lineWidth: 0.7)
             }
-                .clipShape(shape)
-                .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
-        } else {
-            ZStack {
-                shape.fill(.ultraThinMaterial)
-                content
-            }
-                .clipShape(shape)
-                .overlay {
-                    shape.strokeBorder(.white.opacity(0.30), lineWidth: 0.7)
-                }
-                .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
-        }
+            .clipShape(shape)
+            .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
     }
 }
