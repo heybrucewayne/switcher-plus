@@ -30,6 +30,17 @@ import Foundation
         let merged = WindowMatching.unrepresentedDocuments(candidates: [first,offSpace,offSpace,helper,menu], listedIDs: [1])
         precondition(merged.map(\.id) == [9], "Global merge adds off-Space documents but not duplicates or helper surfaces")
         precondition(WindowMatching.unrepresentedDocuments(candidates: [offSpace], listedIDs: []).count == 1, "An app missing entirely from AXWindows is still listed")
-        print("18 window matching/filter checks passed")
+        precondition(WindowMatching.focusMatch(pid: 42, title: "ChatGPT", bounds: .zero, candidates: [first])?.id == 1, "Minimized frame changes can resolve by unique title")
+        precondition(WindowMatching.focusMatch(pid: 42, title: "ChatGPT", bounds: .zero, candidates: [first, second]) == nil, "Restoring never guesses among identical titles")
+        for screen in [CGSize(width: 1440, height: 900), CGSize(width: 800, height: 600)] {
+            for count in [1, 6, 18, 40] {
+                let layout = SwitcherGridLayout(count: count, screen: screen, permissionFooter: false)
+                precondition(layout.rows * layout.columns >= count)
+                precondition(CGFloat(layout.columns) * (layout.cardWidth + 16) + CGFloat(layout.columns - 1) * 12 + 88 <= layout.width + 0.01, "Grid never overflows horizontally")
+                precondition(layout.height <= screen.height - 64)
+                if count == 18 { precondition(layout.rows > 1, "Many windows wrap into rows") }
+            }
+        }
+        print("Matching, restore lookup, and 8 grid scenarios passed")
     }
 }

@@ -1,5 +1,6 @@
 import ApplicationServices
 import CoreGraphics
+import AppKit
 
 enum PermissionManager {
     static var accessibilityGranted: Bool {
@@ -18,5 +19,18 @@ enum PermissionManager {
 
     static func requestScreenRecording() {
         _ = CGRequestScreenCaptureAccess()
+    }
+
+    static func openAccessibilitySettings() {
+        openPrivacyPane("Privacy_Accessibility")
+    }
+
+    static func openScreenRecordingSettings() {
+        openPrivacyPane("Privacy_ScreenCapture")
+    }
+
+    private static func openPrivacyPane(_ pane: String) {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") else { return }
+        NSWorkspace.shared.open(url)
     }
 }

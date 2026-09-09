@@ -10,33 +10,36 @@ final class WindowFocusService {
         pendingFocus?.cancel()
         guard let application = NSRunningApplication(processIdentifier: window.ownerPID) else { return }
         application.unhide()
-        if let element { raise(element, pid: window.ownerPID) }
         application.activate(options: [])
-        if let element {
-            raise(element, pid: window.ownerPID)
-            return
-        }
-        // Inactive-Space windows may have no AX element until activation changes
-        // Spaces. Resolve the selected surface again while that transition settles.
         pendingFocus = Task { [weak self] in
-            for _ in 0..<12 {
-                guard !Task.isCancelled, !application.isTerminated else { return }
-                if let element = self?.resolve(window) {
-                    self?.raise(element, pid: window.ownerPID)
+            var target = element
+            for _ in 0..<24 {
+                guard !Task.isCancelled, !application.isTerminated, let self else { return }
+                // Refresh references after activation/Space changes; retain a valid
+                // known element if AXWindows has not caught up yet.
+                target = self.resolve(window) ?? target
+                if let target, self.restoreAndRaise(target, pid: window.ownerPID) {
                     return
                 }
                 do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
             }
             Logger(subsystem: "com.switchr.app", category: "WindowFocus")
-                .error("Could not resolve selected window after activation pid=\(window.ownerPID)")
+                .error("Selected window did not confirm restored/focused pid=\(window.ownerPID)")
         }
     }
 
-    private func raise(_ element: AXUIElement, pid: pid_t) {
-        AXUIElementSetAttributeValue(element, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+    private func restoreAndRaise(_ element: AXUIElement, pid: pid_t) -> Bool {
+        let minimized = (attribute(element, kAXMinimizedAttribute) as? NSNumber)?.boolValue
+        if minimized == true {
+            let result = AXUIElementSetAttributeValue(element, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+            // Restoring is asynchronous; raising during the Dock animation can fail.
+            guard result == .success else { return false }
+            return false
+        }
+        let raised = AXUIElementPerformAction(element, kAXRaiseAction as CFString)
         AXUIElementSetAttributeValue(element, kAXMainAttribute as CFString, kCFBooleanTrue)
-        AXUIElementPerformAction(element, kAXRaiseAction as CFString)
         AXUIElementSetAttributeValue(AXUIElementCreateApplication(pid), kAXFocusedWindowAttribute as CFString, element)
+        return raised == .success && (attribute(element, kAXMainAttribute) as? NSNumber)?.boolValue == true
     }
 
     private func resolve(_ window: WindowInfo) -> AXUIElement? {
@@ -55,7 +58,7 @@ final class WindowFocusService {
             candidates.append(WindowCandidate(id: CGWindowID(index), pid: window.ownerPID,
                                               title: attribute(element, kAXTitleAttribute) as? String ?? "", bounds: CGRect(origin: origin, size: size)))
         }
-        guard let match = WindowMatching.match(id: nil, pid: window.ownerPID, title: window.title, bounds: window.bounds, candidates: candidates) else { return nil }
+        guard let match = WindowMatching.focusMatch(pid: window.ownerPID, title: window.title, bounds: window.bounds, candidates: candidates) else { return nil }
         return elements[Int(match.id)]
     }
 

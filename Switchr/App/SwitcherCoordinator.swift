@@ -26,10 +26,8 @@ final class SwitcherCoordinator: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
                 guard let self, !Task.isCancelled else { return }
-                if PermissionManager.accessibilityGranted, self.hotKey.isRunning {
-                    self.permissionPanel?.orderOut(nil)
-                    self.permissionPanel = nil
-                }
+                // PermissionView polls both settings and shows the ready state;
+                // keep it open until the user dismisses the confirmation.
             }
         }
         previewTask = Task { [thumbnails] in
@@ -75,10 +73,18 @@ final class SwitcherCoordinator: ObservableObject {
         dismiss(cancelled: true)
         PermissionManager.requestScreenRecording()
     }
-    func openAccessibilitySettings() { PermissionManager.promptForAccessibility() }
+    func openAccessibilitySettings() {
+        PermissionManager.promptForAccessibility()
+        PermissionManager.openAccessibilitySettings()
+    }
+    func openScreenRecordingSettings() { PermissionManager.openScreenRecordingSettings() }
+    func dismissPermissionPanel() {
+        permissionPanel?.close()
+        permissionPanel = nil
+    }
 
     func presentPermissionIfNeeded() {
-        guard !PermissionManager.accessibilityGranted else { return }
+        guard !PermissionManager.accessibilityGranted || !PermissionManager.screenRecordingGranted else { return }
         showPermissionPanel()
     }
 
@@ -104,7 +110,7 @@ final class SwitcherCoordinator: ObservableObject {
         let root = SwitcherPanel(coordinator: self, thumbnailService: thumbnails)
         let panel = SwitcherNSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.contentView = ClickThroughHostingView(rootView: root)
-        panel.setContentSize(NSSize(width: panelWidth, height: cardWidth * 0.82 + 182 + (PermissionManager.screenRecordingGranted ? 0 : 28)))
+        panel.setContentSize(NSSize(width: gridLayout.width, height: gridLayout.height))
         panel.centerOnActiveScreen()
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -116,19 +122,22 @@ final class SwitcherCoordinator: ObservableObject {
         self.panel = panel
     }
 
-    private var panelWidth: CGFloat {
+    var gridLayout: SwitcherGridLayout {
         let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main
-        return min(max(CGFloat(windows.count) * 236 + 76, 350), min(1480, (screen?.visibleFrame.width ?? 1280) - 80))
+        return SwitcherGridLayout(count: windows.count, screen: screen?.visibleFrame.size ?? CGSize(width: 1280, height: 800), permissionFooter: !PermissionManager.screenRecordingGranted)
     }
 
-    var cardWidth: CGFloat {
-        return min(208, max(100, panelWidth - 104))
+    var cardWidth: CGFloat { gridLayout.cardWidth }
+
+    func moveRow(by amount: Int) {
+        guard !windows.isEmpty else { return }
+        selection = min(windows.count - 1, max(0, selection + amount * gridLayout.columns))
     }
 
     private func showPermissionPanel() {
         if let permissionPanel { permissionPanel.makeKeyAndOrderFront(nil); return }
         let root = PermissionView(coordinator: self)
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 410, height: 245), styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 500, height: 392), styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true

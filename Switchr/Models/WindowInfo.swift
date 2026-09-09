@@ -48,6 +48,15 @@ enum WindowMatching {
         return best.0
     }
 
+    static func focusMatch(pid: pid_t, title: String, bounds: CGRect, candidates: [WindowCandidate]) -> WindowCandidate? {
+        if let match = match(id: nil, pid: pid, title: title, bounds: bounds, candidates: candidates) { return match }
+        // Minimized window frames may change. Only a unique nonempty title is safe.
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return nil }
+        let sameTitle = candidates.filter { $0.pid == pid && $0.title.trimmingCharacters(in: .whitespacesAndNewlines) == title }
+        return sameTitle.count == 1 ? sameTitle[0] : nil
+    }
+
     static func unrepresentedDocuments(candidates: [WindowCandidate], listedIDs: Set<CGWindowID>) -> [WindowCandidate] {
         var seen = listedIDs
         return candidates.filter {
@@ -69,5 +78,26 @@ enum WindowMatching {
 
     static func isDocument(role: String?, subrole: String?) -> Bool {
         role == "AXWindow" && (subrole == "AXStandardWindow" || subrole == "AXDialog")
+    }
+}
+
+struct SwitcherGridLayout {
+    let columns: Int
+    let rows: Int
+    let cardWidth: CGFloat
+    let rowHeight: CGFloat
+    let width: CGFloat
+    let height: CGFloat
+
+    init(count: Int, screen: CGSize, permissionFooter: Bool) {
+        let available = max(200, min(1480, screen.width - 64))
+        let capacity = max(1, Int((available - 88 + 12) / 236))
+        columns = min(max(1, count), capacity)
+        width = min(available, CGFloat(columns) * 236 + 76)
+        cardWidth = min(208, max(60, (width - 88 - CGFloat(columns - 1) * 12) / CGFloat(columns) - 16))
+        rows = max(1, (count + columns - 1) / columns)
+        rowHeight = cardWidth * 0.82 + 126
+        let naturalHeight = CGFloat(rows) * rowHeight + CGFloat(rows - 1) * 16 + 84 + (permissionFooter ? 28 : 0)
+        height = min(naturalHeight, max(180, screen.height - 64))
     }
 }

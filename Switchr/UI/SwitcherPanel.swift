@@ -8,12 +8,13 @@ struct SwitcherPanel: View {
     var body: some View {
         VStack(spacing: 4) {
             ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
+                ScrollView(.vertical, showsIndicators: false) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(coordinator.cardWidth + 16), spacing: 12), count: coordinator.gridLayout.columns), spacing: 16) {
                         ForEach(Array(coordinator.windows.enumerated()), id: \.element.id) { index, window in
                             Button { coordinator.selectAndFocus(window) } label: {
                                 WindowCard(window: window, isSelected: index == coordinator.selection, thumbnailService: thumbnailService, cardWidth: coordinator.cardWidth)
                             }
+                            .frame(height: coordinator.gridLayout.rowHeight)
                             .buttonStyle(.plain)
                             .focusEffectDisabled()
                             .id(window.id)
@@ -47,6 +48,8 @@ struct SwitcherPanel: View {
         .padding(24)
         .onKeyPress(.leftArrow) { coordinator.moveSelection(by: -1); return .handled }
         .onKeyPress(.rightArrow) { coordinator.moveSelection(by: 1); return .handled }
+        .onKeyPress(.upArrow) { coordinator.moveRow(by: -1); return .handled }
+        .onKeyPress(.downArrow) { coordinator.moveRow(by: 1); return .handled }
         .onKeyPress(.escape) { coordinator.dismiss(cancelled: true); return .handled }
     }
 }
