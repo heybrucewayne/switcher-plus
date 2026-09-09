@@ -71,9 +71,13 @@ final class SwitcherCoordinator: ObservableObject {
         permissionPanel?.close()
         permissionPanel = nil
     }
+    func completePermissionSetup() {
+        dismissPermissionPanel()
+        guard panel == nil else { return }
+        present()
+    }
 
     func presentPermissionIfNeeded() {
-        guard !PermissionManager.accessibilityGranted || !PermissionManager.screenRecordingGranted else { return }
         showPermissionPanel()
     }
 
@@ -92,6 +96,8 @@ final class SwitcherCoordinator: ObservableObject {
     }
 
     private func present() {
+        permissionPanel?.close()
+        permissionPanel = nil
         windows = windowManager.windows()
         logger.notice("Switcher opened with \(self.windows.count) windows")
         guard !windows.isEmpty else { hotKey.resetSession(); return }

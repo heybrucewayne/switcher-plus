@@ -40,7 +40,7 @@ struct PermissionView: View {
             )
 
             if allPermissionsGranted {
-                Label("Tamam — Switcher kullanıma hazır.", systemImage: "checkmark.seal.fill")
+                Label("Tamam — Switcher hazır. Açılıyor…", systemImage: "checkmark.seal.fill")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.green)
                     .padding(.top, 2)
@@ -48,9 +48,9 @@ struct PermissionView: View {
 
             HStack {
                 Spacer()
-                Button(allPermissionsGranted ? "Done" : "Check Again") {
+                Button(allPermissionsGranted ? "Open Switcher" : "Check Again") {
                     if allPermissionsGranted {
-                        coordinator.dismissPermissionPanel()
+                        coordinator.completePermissionSetup()
                     } else {
                         refresh()
                     }
@@ -65,6 +65,12 @@ struct PermissionView: View {
                 refresh()
                 try? await Task.sleep(for: .seconds(1))
             }
+        }
+        .task(id: allPermissionsGranted) {
+            guard allPermissionsGranted else { return }
+            try? await Task.sleep(for: .milliseconds(1200))
+            guard !Task.isCancelled else { return }
+            coordinator.completePermissionSetup()
         }
     }
 
