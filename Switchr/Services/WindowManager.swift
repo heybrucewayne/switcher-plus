@@ -32,6 +32,7 @@ final class WindowManager {
                                                 subrole: attribute(element, kAXSubroleAttribute) as? String) else { continue }
                 let minimized = (attribute(element, kAXMinimizedAttribute) as? NSNumber)?.boolValue ?? false
                 let title = attribute(element, kAXTitleAttribute) as? String ?? ""
+                guard !WindowMatching.isAuxiliaryWindow(bundleID: app.bundleIdentifier, title: title) else { continue }
                 var position = CGPoint.zero
                 var size = CGSize.zero
                 if let value = attribute(element, kAXPositionAttribute), CFGetTypeID(value) == AXValueGetTypeID() {
@@ -42,7 +43,8 @@ final class WindowManager {
                 }
                 guard size.width >= 80, size.height >= 60 else { continue }
                 let bounds = CGRect(origin: position, size: size)
-                let number = (attribute(element, "AXWindowNumber") as? NSNumber)?.uint32Value
+                let number = WindowAccess.number(of: element)
+                WindowAccess.remember(element, pid: app.processIdentifier)
                 let match = WindowMatching.match(id: number, pid: app.processIdentifier, title: title, bounds: bounds, candidates: candidates)
                 // AX is the source of truth for listing across Spaces. A window
                 // does not need a currently available capture surface to appear.
@@ -62,6 +64,7 @@ final class WindowManager {
             guard let app = NSRunningApplication(processIdentifier: candidate.pid),
                   app.activationPolicy == .regular, !app.isTerminated,
                   candidate.pid != ProcessInfo.processInfo.processIdentifier else { continue }
+            guard !WindowMatching.isAuxiliaryWindow(bundleID: app.bundleIdentifier, title: candidate.title) else { continue }
             result.append(WindowInfo(id: candidate.id, ownerPID: candidate.pid,
                                      ownerName: app.localizedName ?? "Application", title: candidate.title,
                                      bounds: candidate.bounds, layer: 0, isMinimized: false,

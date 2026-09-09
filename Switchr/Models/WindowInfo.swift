@@ -48,6 +48,13 @@ enum WindowMatching {
         return best.0
     }
 
+    static func isAuxiliaryWindow(bundleID: String?, title: String) -> Bool {
+        guard bundleID == "com.apple.mail" else { return false }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        // Mail's ICMCD maintenance tool is not a mailbox/message/composer window.
+        return ["icloud mail temizleme", "icloud mail cleanup", "icloud mail cleaner"].contains(normalized)
+    }
+
     static func focusMatch(pid: pid_t, title: String, bounds: CGRect, candidates: [WindowCandidate]) -> WindowCandidate? {
         if let match = match(id: nil, pid: pid, title: title, bounds: bounds, candidates: candidates) { return match }
         // Minimized window frames may change. Only a unique nonempty title is safe.

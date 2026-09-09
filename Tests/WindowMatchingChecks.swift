@@ -41,6 +41,10 @@ import Foundation
                 if count == 18 { precondition(layout.rows > 1, "Many windows wrap into rows") }
             }
         }
-        print("Matching, restore lookup, and 8 grid scenarios passed")
+        precondition(WindowMatching.isAuxiliaryWindow(bundleID: "com.apple.mail", title: "iCloud Mail Temizleme"))
+        precondition(!WindowMatching.isAuxiliaryWindow(bundleID: "com.apple.mail", title: "Gelen Kutusu"))
+        precondition(!WindowMatching.isAuxiliaryWindow(bundleID: "com.apple.mail", title: "Taslak: iCloud Mail Temizleme"))
+        precondition(!WindowMatching.isAuxiliaryWindow(bundleID: "other.app", title: "iCloud Mail Temizleme"))
+        print("Matching, Mail utility filtering, restore lookup, and 8 grid scenarios passed")
     }
 }
