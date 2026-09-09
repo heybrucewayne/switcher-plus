@@ -7,20 +7,35 @@ struct SwitcherPanel: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            ScrollViewReader { proxy in
-                ScrollView(.vertical, showsIndicators: false) {
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(coordinator.cardWidth + 16), spacing: 12), count: coordinator.gridLayout.columns), spacing: 16) {
-                        ForEach(Array(coordinator.windows.enumerated()), id: \.element.id) { index, window in
-                            Button { coordinator.selectAndFocus(window) } label: {
-                                WindowCard(window: window, isSelected: index == coordinator.selection, thumbnailService: thumbnailService, cardWidth: coordinator.cardWidth)
+            if coordinator.windows.isEmpty {
+                VStack(spacing: 10) {
+                    Image(systemName: "rectangle.on.rectangle.slash")
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text("No windows found")
+                        .font(.headline)
+                    Text("Open a window and press Option–Tab again.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.fixed(coordinator.cardWidth + 16), spacing: 12), count: coordinator.gridLayout.columns), spacing: 16) {
+                            ForEach(Array(coordinator.windows.enumerated()), id: \.element.id) { index, window in
+                                Button { coordinator.selectAndFocus(window) } label: {
+                                    WindowCard(window: window, isSelected: index == coordinator.selection, thumbnailService: thumbnailService, cardWidth: coordinator.cardWidth)
+                                }
+                                .frame(height: coordinator.gridLayout.rowHeight)
+                                .buttonStyle(.plain)
+                                .focusEffectDisabled()
+                                .id(window.id)
+                                .accessibilityLabel("\(window.ownerName), \(window.displayTitle)\(window.isMinimized ? ", minimized" : "")")
                             }
-                            .frame(height: coordinator.gridLayout.rowHeight)
-                            .buttonStyle(.plain)
-                            .focusEffectDisabled()
-                            .id(window.id)
-                            .accessibilityLabel("\(window.ownerName), \(window.displayTitle)\(window.isMinimized ? ", minimized" : "")")
-                        }
-                    }.padding(.horizontal, 20).padding(.vertical, 18)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 18)
                 }
                 .scrollIndicators(.hidden)
                 .onAppear {
@@ -33,7 +48,8 @@ struct SwitcherPanel: View {
                     proxy.scrollTo(coordinator.windows[selection].id, anchor: .center)
                 }
             }
-            if !hasScreenPermission {
+            }
+            if !hasScreenPermission && !coordinator.windows.isEmpty {
                 Button("Enable window previews — Screen Recording permission") {
                     coordinator.requestScreenRecording()
                     hasScreenPermission = PermissionManager.screenRecordingGranted

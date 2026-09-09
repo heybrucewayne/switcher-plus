@@ -100,7 +100,6 @@ final class SwitcherCoordinator: ObservableObject {
         permissionPanel = nil
         windows = windowManager.windows()
         logger.notice("Switcher opened with \(self.windows.count) windows")
-        guard !windows.isEmpty else { hotKey.resetSession(); return }
         selection = windows.count > 1 ? 1 : 0 // first Tab advances from the most recently listed window.
         let root = SwitcherPanel(coordinator: self, thumbnailService: thumbnails)
         let panel = SwitcherNSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -113,7 +112,9 @@ final class SwitcherCoordinator: ObservableObject {
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
+        panel.orderFrontRegardless()
         self.panel = panel
     }
 
