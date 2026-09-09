@@ -24,6 +24,12 @@ import Foundation
         precondition(WindowMatching.listingID(number: 2, matchedID: 1, usedIDs: [1], fallbackID: 999) == 2, "Native identity wins over a geometry match from another Space")
         precondition(WindowMatching.listingID(number: 1, matchedID: nil, usedIDs: [1], fallbackID: 999) == nil, "Repeated native identity is still deduplicated")
         precondition(WindowMatching.listingID(number: nil, matchedID: 3, usedIDs: [1], fallbackID: 999) == 3, "Available unclaimed capture identity is preserved")
-        print("16 window matching/filter checks passed")
+        let offSpace = WindowCandidate(id: 9, pid: 55, title: "Calendar", bounds: bounds)
+        let helper = WindowCandidate(id: 10, pid: 55, title: "", bounds: bounds)
+        let menu = WindowCandidate(id: 11, pid: 55, title: "Menu", bounds: CGRect(x: 0,y: 0,width: 1920,height: 30))
+        let merged = WindowMatching.unrepresentedDocuments(candidates: [first,offSpace,offSpace,helper,menu], listedIDs: [1])
+        precondition(merged.map(\.id) == [9], "Global merge adds off-Space documents but not duplicates or helper surfaces")
+        precondition(WindowMatching.unrepresentedDocuments(candidates: [offSpace], listedIDs: []).count == 1, "An app missing entirely from AXWindows is still listed")
+        print("18 window matching/filter checks passed")
     }
 }

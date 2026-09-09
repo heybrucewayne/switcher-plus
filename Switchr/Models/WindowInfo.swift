@@ -48,6 +48,17 @@ enum WindowMatching {
         return best.0
     }
 
+    static func unrepresentedDocuments(candidates: [WindowCandidate], listedIDs: Set<CGWindowID>) -> [WindowCandidate] {
+        var seen = listedIDs
+        return candidates.filter {
+            // Untitled Window Server surfaces include menu bars, app snapshots,
+            // and invisible helper windows. Untitled real AX documents are already listed.
+            $0.bounds.width >= 80 && $0.bounds.height >= 80 &&
+            !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            seen.insert($0.id).inserted
+        }
+    }
+
     static func listingID(number: CGWindowID?, matchedID: CGWindowID?, usedIDs: Set<CGWindowID>, fallbackID: CGWindowID) -> CGWindowID? {
         if let number {
             return usedIDs.contains(number) ? nil : number

@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import OSLog
 
 @MainActor
 final class WindowManager {
@@ -54,6 +55,20 @@ final class WindowManager {
                 result.append(WindowInfo(id: id, ownerPID: app.processIdentifier, ownerName: app.localizedName ?? "Application", title: title, bounds: bounds, layer: 0, isMinimized: minimized, bundleIdentifier: app.bundleIdentifier))
             }
         }
+        // AXWindows is incomplete for apps on inactive Spaces. Merge the global
+        // Window Server inventory instead of treating AX as the only source.
+        let extras = WindowMatching.unrepresentedDocuments(candidates: candidates, listedIDs: Set(result.map(\.id)))
+        for candidate in extras {
+            guard let app = NSRunningApplication(processIdentifier: candidate.pid),
+                  app.activationPolicy == .regular, !app.isTerminated,
+                  candidate.pid != ProcessInfo.processInfo.processIdentifier else { continue }
+            result.append(WindowInfo(id: candidate.id, ownerPID: candidate.pid,
+                                     ownerName: app.localizedName ?? "Application", title: candidate.title,
+                                     bounds: candidate.bounds, layer: 0, isMinimized: false,
+                                     bundleIdentifier: app.bundleIdentifier))
+        }
+        Logger(subsystem: "com.switchr.app", category: "Discovery")
+            .notice("AX windows=\(self.elements.count), merged total=\(result.count)")
         let order = raw.compactMap { ($0[kCGWindowNumber as String] as? NSNumber)?.uint32Value }
         let ranks = Dictionary(order.enumerated().map { ($0.element, $0.offset) }, uniquingKeysWith: min)
         return result.enumerated().sorted {
