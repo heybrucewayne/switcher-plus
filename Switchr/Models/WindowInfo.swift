@@ -64,6 +64,28 @@ enum WindowMatching {
         return sameTitle.count == 1 ? sameTitle[0] : nil
     }
 
+    static func previewMatch(id: CGWindowID, pid: pid_t, title: String, bounds: CGRect, candidates: [WindowCandidate]) -> WindowCandidate? {
+        if let exact = candidates.first(where: { $0.pid == pid && $0.id == id }) { return exact }
+        if let strict = match(id: nil, pid: pid, title: title, bounds: bounds, candidates: candidates) { return strict }
+
+        let owned = candidates.filter { $0.pid == pid }
+        let normalizedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let ranked = owned.compactMap { candidate -> (WindowCandidate, Double)? in
+            let sizeError = max(abs(candidate.bounds.width - bounds.width), abs(candidate.bounds.height - bounds.height))
+            guard sizeError <= 180 else { return nil }
+            let positionError = max(abs(candidate.bounds.minX - bounds.minX), abs(candidate.bounds.minY - bounds.minY))
+            let sameTitle = !normalizedTitle.isEmpty && candidate.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedTitle
+            let score = (sameTitle ? 120.0 : 0.0) + max(0, 100 - Double(sizeError)) + max(0, 30 - Double(positionError) * 0.1)
+            return (candidate, score)
+        }.sorted { $0.1 > $1.1 }
+
+        guard let best = ranked.first else { return nil }
+        // A single same-process surface is safe even when AX and ScreenCaptureKit
+        // use different titles or coordinate spaces. Never guess between ties.
+        guard ranked.count == 1 || best.1 - ranked[1].1 >= 14 else { return nil }
+        return best.0
+    }
+
     static func unrepresentedDocuments(candidates: [WindowCandidate], listedIDs: Set<CGWindowID>) -> [WindowCandidate] {
         var seen = listedIDs
         return candidates.filter {

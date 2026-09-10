@@ -15,9 +15,12 @@ actor WindowThumbnailService {
 
     func image(for windowInfo: WindowInfo) async -> CGImage? {
         guard PermissionManager.screenRecordingGranted else { cache.removeAll(); return nil }
-        let cachedMatch = WindowMatching.match(id: windowInfo.id, pid: windowInfo.ownerPID, title: windowInfo.title, bounds: windowInfo.bounds, candidates: cache.values.map(\.candidate))
+        let cachedMatch = WindowMatching.previewMatch(id: windowInfo.id, pid: windowInfo.ownerPID, title: windowInfo.title, bounds: windowInfo.bounds, candidates: cache.values.map(\.candidate))
         let previous = cachedMatch.flatMap { cache[$0.id] }
-        if let previous, windowInfo.isMinimized || Date().timeIntervalSince(previous.date) < 3 { return previous.image }
+        let exactCachedImage = cache[windowInfo.id]?.image
+        if let previous, windowInfo.isMinimized || (cachedMatch?.id == windowInfo.id && Date().timeIntervalSince(previous.date) < 3) {
+            return previous.image
+        }
         do {
             if content == nil || Date().timeIntervalSince(contentDate) > 2 {
                 content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false)
@@ -28,10 +31,10 @@ actor WindowThumbnailService {
                 guard let pid = window.owningApplication?.processID else { return nil }
                 return WindowCandidate(id: window.windowID, pid: pid, title: window.title ?? "", bounds: window.frame)
             }
-            guard let match = WindowMatching.match(id: windowInfo.id, pid: windowInfo.ownerPID, title: windowInfo.title, bounds: windowInfo.bounds, candidates: candidates),
+            guard let match = WindowMatching.previewMatch(id: windowInfo.id, pid: windowInfo.ownerPID, title: windowInfo.title, bounds: windowInfo.bounds, candidates: candidates),
                   let window = available.first(where: { $0.windowID == match.id }) else {
                 logger.debug("No capture surface for pid=\(windowInfo.ownerPID) minimized=\(windowInfo.isMinimized)")
-                return previous?.image
+                return windowInfo.isMinimized ? previous?.image : nil
             }
             let filter = SCContentFilter(desktopIndependentWindow: window)
             let configuration = SCStreamConfiguration()
@@ -50,7 +53,7 @@ actor WindowThumbnailService {
             return image
         } catch {
             logger.error("Capture failed pid=\(windowInfo.ownerPID), code=\((error as NSError).code)")
-            return previous?.image
+            return windowInfo.isMinimized ? previous?.image : exactCachedImage
         }
     }
 

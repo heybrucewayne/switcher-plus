@@ -32,6 +32,9 @@ import Foundation
         precondition(WindowMatching.unrepresentedDocuments(candidates: [offSpace], listedIDs: []).count == 1, "An app missing entirely from AXWindows is still listed")
         precondition(WindowMatching.focusMatch(pid: 42, title: "ChatGPT", bounds: .zero, candidates: [first])?.id == 1, "Minimized frame changes can resolve by unique title")
         precondition(WindowMatching.focusMatch(pid: 42, title: "ChatGPT", bounds: .zero, candidates: [first, second]) == nil, "Restoring never guesses among identical titles")
+        precondition(WindowMatching.previewMatch(id: 99, pid: 42, title: "Mail", bounds: bounds.insetBy(dx: 30, dy: 30), candidates: [first])?.id == 1, "Unique Mail surfaces tolerate ScreenCaptureKit title/frame differences")
+        let sameFrame = WindowCandidate(id: 6, pid: 42, title: "", bounds: bounds)
+        precondition(WindowMatching.previewMatch(id: 99, pid: 42, title: "Mail", bounds: bounds, candidates: [first, sameFrame]) == nil, "Preview matching never guesses between ambiguous same-process surfaces")
         for screen in [CGSize(width: 1440, height: 900), CGSize(width: 800, height: 600)] {
             for count in [1, 6, 18, 40] {
                 let layout = SwitcherGridLayout(count: count, screen: screen, permissionFooter: false)
