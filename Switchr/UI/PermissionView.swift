@@ -13,9 +13,12 @@ struct PermissionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 12) {
-                Image(systemName: allPermissionsGranted ? "checkmark.circle.fill" : "rectangle.3.group.fill")
-                    .font(.system(size: 30, weight: .medium))
-                    .foregroundStyle(allPermissionsGranted ? Color.green : Color.accentColor)
+                Image("BrandIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .accessibilityLabel("Switcher +")
                 VStack(alignment: .leading, spacing: 3) {
                     Text(allPermissionsGranted ? "Switcher is ready" : "Set up Switcher +")
                         .font(.title3.weight(.semibold))
